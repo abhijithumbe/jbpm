@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -82,15 +83,29 @@ public class LogCleanupCommand implements Command, Reoccurring {
     @Override
     public Date getScheduleTime() {
         Date nextSchedule;
+        Date temp;
         if (mightBeMore) {
             // if there are pending records, reexecute immediately
             nextSchedule = Date.from(Instant.now().plus(Duration.ofMillis(100)));
+ 
         }
         else {
             if (nextScheduleTimeAdd <= 0) {
                 return null;
             }
-            nextSchedule = Date.from(Instant.now().plus(nextScheduleTimeAdd, ChronoUnit.MILLIS));
+             nextSchedule = Date.from(Instant.now().plus(nextScheduleTimeAdd, ChronoUnit.MILLIS));
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(nextSchedule);
+            int currentSeconds = calendar.get(Calendar.SECOND);
+            if (currentSeconds != 0) {
+               logger.info("Original seconds: {}. Modifying to set seconds to 0.", currentSeconds);
+               calendar.set(Calendar.SECOND, 0);  // Set seconds to 0
+            }
+            nextSchedule = calendar.getTime();
+            logger.info(" NextSchedule after adjusting time {}",  nextSchedule);
+           // nextSchedule=temp;
+             calendar= null;
         }
         logger.debug("Next schedule for job {} is set to {}", this.getClass().getSimpleName(), nextSchedule);
         return nextSchedule;
@@ -296,7 +311,7 @@ public class LogCleanupCommand implements Command, Reoccurring {
             // return diff between scheduled time and actual time
             Date scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
             executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
-            logger.debug("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
+            logger.info("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
         }
         // no calculation required for interval (or empty) mode
         return executionTimeInMillis;
