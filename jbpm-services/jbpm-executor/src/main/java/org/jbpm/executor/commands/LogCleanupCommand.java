@@ -324,7 +324,7 @@ public class LogCleanupCommand implements Command, Reoccurring {
 
     private long calculateExecutionTimeInMillis_new(CommandContext ctx) {
         long executionTimeInMillis = 0;
-
+        Date scheduledExecutionTime = null;
         // If this is the first execution, save the scheduledExecutionTime
         if (firstScheduledExecutionTime == null) {
             firstScheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
@@ -336,11 +336,19 @@ public class LogCleanupCommand implements Command, Reoccurring {
         String repeatMode = (String) ctx.getData("RepeatMode");
         if ("fixed".equalsIgnoreCase(repeatMode)) {
             // return diff between scheduled time and actual time
-            Date scheduledExecutionTime = firstScheduledExecutionTime;
+            
             logger.info("******* 3 scheduledExecutionTime  {}", scheduledExecutionTime);
 
             logger.info("****** 4 .... mightbrMore= {}",mightBeMore);
+            
+            if(mightBeMore) {
+                scheduledExecutionTime = firstScheduledExecutionTime;
+                executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
+                logger.info("****** Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
 
+                return executionTimeInMillis;
+            } 
+            scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
             executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
             logger.info("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
         }
