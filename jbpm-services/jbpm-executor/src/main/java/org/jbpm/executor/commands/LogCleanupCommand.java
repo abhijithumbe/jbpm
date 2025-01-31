@@ -87,7 +87,7 @@ public class LogCleanupCommand implements Command, Reoccurring {
         if (mightBeMore) {
             // if there are pending records, reexecute immediately
             nextSchedule = Date.from(Instant.now().plus(Duration.ofMillis(100)));
- 
+            logger.info("**** 1 ... Inside if ... nextSchedule=",nextSchedule);
         }
         else {
             if (nextScheduleTimeAdd <= 0) {
@@ -310,6 +310,8 @@ public class LogCleanupCommand implements Command, Reoccurring {
         if( "fixed".equalsIgnoreCase(repeatMode) ) {
             // return diff between scheduled time and actual time
             Date scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
+            logger.info("******* 3 scheduledExecutionTime  {}",scheduledExecutionTime );
+
             executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
             logger.info("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
         }
