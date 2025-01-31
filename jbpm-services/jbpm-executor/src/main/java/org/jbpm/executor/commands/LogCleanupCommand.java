@@ -79,15 +79,18 @@ public class LogCleanupCommand implements Command, Reoccurring {
 
     private long nextScheduleTimeAdd;
     private boolean mightBeMore;
+    private Date firstScheduledExecutionTime = null;
+
 
     @Override
     public Date getScheduleTime() {
         Date nextSchedule;
-        Date temp;
+        //Date temp;
+        logger.info("***** begin****");
         if (mightBeMore) {
             // if there are pending records, reexecute immediately
             nextSchedule = Date.from(Instant.now().plus(Duration.ofMillis(100)));
-            logger.info("**** 1 ... Inside if ... nextSchedule=",nextSchedule);
+            logger.info("**** 1 ... Inside if ... nextSchedule= {}",nextSchedule);
         }
         else {
             if (nextScheduleTimeAdd <= 0) {
@@ -300,7 +303,7 @@ public class LogCleanupCommand implements Command, Reoccurring {
         String nextRun = (String) ctx.getData("NextRun");
         if (nextRun != null) {
             // if calculated next execution time is negative, schedule next run for immediate execution
-            nextScheduleTimeAdd = Math.max(DateTimeUtils.parseDateAsDuration(nextRun) - calculateExecutionTimeInMillis(ctx), 100);
+            nextScheduleTimeAdd = Math.max(DateTimeUtils.parseDateAsDuration(nextRun) - calculateExecutionTimeInMillis_new(ctx), 100);
         }
     }
 
@@ -318,4 +321,31 @@ public class LogCleanupCommand implements Command, Reoccurring {
         // no calculation required for interval (or empty) mode
         return executionTimeInMillis;
     }
+
+    private long calculateExecutionTimeInMillis_new(CommandContext ctx) {
+        long executionTimeInMillis = 0;
+
+        // If this is the first execution, save the scheduledExecutionTime
+        if (firstScheduledExecutionTime == null) {
+            firstScheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
+        }
+
+        // Log the first execution time
+        logger.info("First scheduledExecutionTime: {}", firstScheduledExecutionTime);
+
+        String repeatMode = (String) ctx.getData("RepeatMode");
+        if ("fixed".equalsIgnoreCase(repeatMode)) {
+            // return diff between scheduled time and actual time
+            Date scheduledExecutionTime = firstScheduledExecutionTime;
+            logger.info("******* 3 scheduledExecutionTime  {}", scheduledExecutionTime);
+
+            logger.info("****** 4 .... mightbrMore= {}",mightBeMore);
+
+            executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
+            logger.info("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
+        }
+        // no calculation required for interval (or empty) mode
+        return executionTimeInMillis;
+    }
+
 }
