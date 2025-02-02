@@ -341,12 +341,20 @@ public class LogCleanupCommand implements Command, Reoccurring {
 
             logger.info("****** 4 .... mightbrMore= {}",mightBeMore);
             
-            if(mightBeMore) {
+            if(!mightBeMore) {
+                if(firstScheduledExecutionTime != null){
                 scheduledExecutionTime = firstScheduledExecutionTime;
                 executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
-                logger.info("****** Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
-
+                logger.info("****** 111 Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
+                firstScheduledExecutionTime=null;
                 return executionTimeInMillis;
+                } else {
+                    scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
+                    executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
+                    logger.info("****** 222 Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
+
+                    return executionTimeInMillis;
+                }
             } 
             scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
             executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
