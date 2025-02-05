@@ -298,11 +298,11 @@ public class LogCleanupCommand implements Command, Reoccurring {
         String nextRun = (String) ctx.getData("NextRun");
         if (nextRun != null) {
             // if calculated next execution time is negative, schedule next run for immediate execution
-            nextScheduleTimeAdd = Math.max(DateTimeUtils.parseDateAsDuration(nextRun) - calculateExecutionTimeInMillis_new(ctx), 100);
+            nextScheduleTimeAdd = Math.max(DateTimeUtils.parseDateAsDuration(nextRun) - calculateExecutionTimeInMillis(ctx), 100);
         }
     }
 
-    private long calculateExecutionTimeInMillis_new(CommandContext ctx) {
+    private long calculateExecutionTimeInMillis(CommandContext ctx) {
         long executionTimeInMillis = 0;
         Date scheduledExecutionTime = null;
 
