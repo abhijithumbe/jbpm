@@ -85,12 +85,9 @@ public class LogCleanupCommand implements Command, Reoccurring {
     @Override
     public Date getScheduleTime() {
         Date nextSchedule;
-        //Date temp;
-        logger.info("***** begin****");
         if (mightBeMore) {
             // if there are pending records, reexecute immediately
             nextSchedule = Date.from(Instant.now().plus(Duration.ofMillis(100)));
-            logger.info("**** 1 ... Inside if ... nextSchedule= {}",nextSchedule);
         }
         else {
             if (nextScheduleTimeAdd <= 0) {
@@ -106,8 +103,6 @@ public class LogCleanupCommand implements Command, Reoccurring {
                calendar.set(Calendar.SECOND, 0);  // Set seconds to 0
             }
             nextSchedule = calendar.getTime();
-            logger.info(" NextSchedule after adjusting time {}",  nextSchedule);
-           // nextSchedule=temp;
              calendar= null;
         }
         logger.debug("Next schedule for job {} is set to {}", this.getClass().getSimpleName(), nextSchedule);
@@ -307,56 +302,31 @@ public class LogCleanupCommand implements Command, Reoccurring {
         }
     }
 
-    private long calculateExecutionTimeInMillis(CommandContext ctx) {
-        long executionTimeInMillis = 0;
-        String repeatMode = (String) ctx.getData("RepeatMode");
-        if( "fixed".equalsIgnoreCase(repeatMode) ) {
-            // return diff between scheduled time and actual time
-            Date scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
-            logger.info("******* 3 scheduledExecutionTime  {}",scheduledExecutionTime );
-
-            executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
-            logger.info("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
-        }
-        // no calculation required for interval (or empty) mode
-        return executionTimeInMillis;
-    }
-
     private long calculateExecutionTimeInMillis_new(CommandContext ctx) {
         long executionTimeInMillis = 0;
         Date scheduledExecutionTime = null;
+
         // If this is the first execution, save the scheduledExecutionTime
-        if (firstScheduledExecutionTime == null) {
-            firstScheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
-        }
-
-        // Log the first execution time
-        logger.info("First scheduledExecutionTime: {}", firstScheduledExecutionTime);
-
+         if (firstScheduledExecutionTime == null) {
+             firstScheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
+         }
         String repeatMode = (String) ctx.getData("RepeatMode");
         if ("fixed".equalsIgnoreCase(repeatMode)) {
-            // return diff between scheduled time and actual time
-            
-            logger.info("******* 3 scheduledExecutionTime  {}", scheduledExecutionTime);
-
-            logger.info("****** 4 .... mightbrMore= {}",mightBeMore);
+           
             
             if(!mightBeMore) {
                 if(firstScheduledExecutionTime != null){
                 scheduledExecutionTime = firstScheduledExecutionTime;
+
+                 // return diff between scheduled time and actual time
                 executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
-                logger.info("****** 111 Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
+                logger.info("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
                 firstScheduledExecutionTime=null;
                 return executionTimeInMillis;
-                } else {
-                    scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
-                    executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
-                    logger.info("****** 222 Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
-
-                    return executionTimeInMillis;
-                }
+                 }
             } 
             scheduledExecutionTime = (Date) ctx.getData("scheduledExecutionTime");
+             // return diff between scheduled time and actual time
             executionTimeInMillis = Instant.now().minus(scheduledExecutionTime.toInstant().toEpochMilli(), ChronoUnit.MILLIS).toEpochMilli();
             logger.info("Calculated execution time {}ms, based on scheduled execution time {}", executionTimeInMillis, scheduledExecutionTime);
         }
