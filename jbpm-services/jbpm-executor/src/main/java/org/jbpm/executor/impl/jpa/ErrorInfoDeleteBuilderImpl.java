@@ -91,13 +91,18 @@ public class ErrorInfoDeleteBuilderImpl extends AbstractAuditDeleteBuilderImpl<E
 
     @Override
     protected Subquery getSubQuery() {
-        String queryBaseStr = "SELECT r.id from RequestInfo r where r.status in ('ERROR', 'CANCELLED', 'DONE') AND " +
-        "(r.processInstanceId is null OR r.processInstanceId not in " +
-            "(SELECT spl.processInstanceId FROM ProcessInstanceLog spl where spl.status in (" +
-            ProcessInstance.STATE_PENDING + "," + // 0
-            ProcessInstance.STATE_ACTIVE + "," + // 1
-            ProcessInstance.STATE_SUSPENDED + // 4
-            ")))";
+        String queryBaseStr = "SELECT r.id FROM RequestInfo r " +
+                "LEFT JOIN ProcessInstanceLog pil ON r.processInstanceId = pil.processInstanceId " +
+                "AND pil.status IN (" +
+                ProcessInstance.STATE_PENDING + ", " +
+                ProcessInstance.STATE_ACTIVE + ", " +
+                ProcessInstance.STATE_SUSPENDED + ") " +
+                "WHERE r.status IN ('ERROR', 'CANCELLED', 'DONE') " +
+                "AND (r.processInstanceId IS NULL OR pil.processInstanceId IS NULL)";
+
+// CREATE INDEX idx_requestinfo_status_pid ON RequestInfo(status, processInstanceId);
+// CREATE INDEX idx_processlog_pid_status ON ProcessInstanceLog(processInstanceId, status);
+
         return new Subquery("l.requestInfo", queryBaseStr, 1);
     }
 }
