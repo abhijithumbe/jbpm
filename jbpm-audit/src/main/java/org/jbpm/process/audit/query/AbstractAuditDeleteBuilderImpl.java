@@ -257,9 +257,29 @@ public abstract class AbstractAuditDeleteBuilderImpl<T> extends AbstractDeleteBu
                     subquerySQL = subquery.build();
                     params.putAll(subquery.getQueryParams());
                 }
-                return recordsPerTransaction <= 0 ? getJpaAuditLogService().doDelete(getQueryTable(), queryWhere,
-                        subquerySQL, params) : getJpaAuditLogService().doPartialDelete(getQueryTable(), queryWhere,
-                                subquerySQL, params, recordsPerTransaction);
+
+
+                boolean selfReferencingQuery = false;
+
+               if (subquerySQL != null && getQueryTable() != null) {
+                   selfReferencingQuery = subquerySQL.contains(getQueryTable());
+                }
+
+                
+                 if (recordsPerTransaction <= 0 && !selfReferencingQuery) {
+                   return getJpaAuditLogService().doDelete(
+                          getQueryTable(), queryWhere, subquerySQL, params);
+                }
+
+ 
+            return getJpaAuditLogService().doPartialDelete(
+                    getQueryTable(), queryWhere, subquerySQL, params, recordsPerTransaction);
+
+
+
+                //return recordsPerTransaction <= 0 ? getJpaAuditLogService().doDelete(getQueryTable(), queryWhere,
+                  //      subquerySQL, params) : getJpaAuditLogService().doPartialDelete(getQueryTable(), queryWhere,
+                    //            subquerySQL, params, recordsPerTransaction);
 
             }
         };
