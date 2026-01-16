@@ -110,17 +110,78 @@ public class RequestInfoDeleteBuilderImpl extends AbstractAuditDeleteBuilderImpl
         return subquery;
     }
 
-    @Override
+       @Override
     protected Subquery getSubQuery() {
-        String queryBaseStr = "SELECT ri.id FROM RequestInfo ri WHERE ri.status IN ('ERROR', 'CANCELLED', 'DONE') " +
-                "AND (ri.processInstanceId IS NULL OR EXISTS (" +
-                "SELECT 1 FROM ProcessInstanceLog pil WHERE pil.processInstanceId = ri.processInstanceId " +
-                "AND pil.status NOT IN (" +
-                ProcessInstance.STATE_PENDING + ", " + // 0
-                ProcessInstance.STATE_ACTIVE + ", " + // 1
-                ProcessInstance.STATE_SUSPENDED + // 4
-                ")))";
- 
-        return new Subquery("l.id", queryBaseStr, 1);
+        String queryBaseStr = "select ri.id from RequestInfo ri where ri.processInstanceId is null " +
+            "or ri.processInstanceId not in (select pil.processInstanceId from ProcessInstanceLog pil where pil.status in (" +
+            ProcessInstance.STATE_PENDING + "," + // 0
+            ProcessInstance.STATE_ACTIVE + "," + // 1
+            ProcessInstance.STATE_SUSPENDED + // 4
+            "))";
+
+         String queryBaseStr1 =
+        "SELECT id FROM (" +
+        "  SELECT ri.id " +
+        "  FROM RequestInfo ri " +
+        "  WHERE ri.status IN ('DONE','ERROR','CANCELLED') " +
+        "    AND (ri.processInstanceId IS NULL " +
+        "         OR NOT EXISTS (" +
+        "           SELECT 1 FROM ProcessInstanceLog pil " +
+        "           WHERE pil.processInstanceId = ri.processInstanceId " +
+        "             AND pil.status IN (" +
+                    ProcessInstance.STATE_PENDING + "," +
+                    ProcessInstance.STATE_ACTIVE + "," +
+                    ProcessInstance.STATE_SUSPENDED +
+        "             )))" +
+        ") tmp";     
+         return new Subquery("l.id", queryBaseStr1, 1);
+
+  /*        String queryBaseStr_2 =
+        "SELECT 1 FROM ProcessInstanceLog pil " +
+        "WHERE pil.processInstanceId = l.processInstanceId " +
+        "AND pil.status NOT IN (" +
+        ProcessInstance.STATE_PENDING + ", " +   // 0
+        ProcessInstance.STATE_ACTIVE + ", " +    // 1
+        ProcessInstance.STATE_SUSPENDED +         // 4
+        ")";
+
+      return new Subquery("l.processInstanceId", "l.processInstanceId IS NULL OR EXISTS (" + queryBaseStr_2 + ")",0); */
+
+
+
+ /*        String queryBaseStr_3 =
+        "SELECT ri.id " +
+        "FROM RequestInfo ri " +
+        "WHERE ri.status IN ('DONE','ERROR','CANCELLED') " +
+        "AND ( " +
+        "     ri.processInstanceId IS NULL " +
+        "     OR NOT EXISTS ( " +
+        "         SELECT 1 " +
+        "         FROM ProcessInstanceLog pil " +
+        "         WHERE pil.processInstanceId = ri.processInstanceId " +
+        "           AND pil.status IN (" +
+                    ProcessInstance.STATE_PENDING + ", " +
+                    ProcessInstance.STATE_ACTIVE + ", " +
+                    ProcessInstance.STATE_SUSPENDED +
+        "         ) " +
+        "     ) " +
+        ")";
+
+    return new Subquery("l.id", queryBaseStr_3, 1); */
+
+
+   /*     String queryBaseStr_4 =
+        "SELECT 1 FROM ProcessInstanceLog pil " +
+        "WHERE pil.processInstanceId = l.processInstanceId " +
+        "AND pil.status IN (" +
+            ProcessInstance.STATE_PENDING + ", " +   // 0
+            ProcessInstance.STATE_ACTIVE + ", " +    // 1
+            ProcessInstance.STATE_SUSPENDED +         // 4
+        ")";
+
+        return new Subquery("",   // no left-hand expression,
+                 "l.processInstanceId IS NULL OR NOT EXISTS (" + queryBaseStr_4 + ")", 0     // 0 = EXISTS / predicate subquery
+    ); */
+
     }
 }
